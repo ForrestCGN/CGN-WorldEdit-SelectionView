@@ -14,6 +14,8 @@ import java.util.List;
 
 public final class CuboidParticleRenderer {
     private static final int MAX_GRID_POSITIONS_PER_AXIS = 64;
+    private static final int ORANGE_DUST_COLOR = 0xFF6600;
+    private static final int RED_DUST_COLOR = 0xFF0000;
 
     private static final int[][] EDGES = {
             {0, 1}, {0, 2}, {0, 4},
@@ -75,10 +77,21 @@ public final class CuboidParticleRenderer {
                 config.gridSides()
         );
 
+        ParticleOptions edgeParticle = createParticle(
+                config.edgeParticleStyle(),
+                config.edgeDustColor(),
+                config.edgeDustScale()
+        );
+        ParticleOptions gridParticle = createParticle(
+                config.gridParticleStyle(),
+                config.gridDustColor(),
+                config.gridDustScale()
+        );
+
         renderLines(
                 player,
                 edgeLines,
-                ParticleTypes.FLAME,
+                edgeParticle,
                 config.maxEdgeParticles(),
                 config.minimumEdgeSpacing(),
                 renderDistanceSquared
@@ -86,11 +99,25 @@ public final class CuboidParticleRenderer {
         renderLines(
                 player,
                 gridLines,
-                DustParticleOptions.REDSTONE,
+                gridParticle,
                 config.maxGridParticles(),
                 gridSpacing,
                 renderDistanceSquared
         );
+    }
+
+    private static ParticleOptions createParticle(
+            SelectionViewConfig.ParticleStyle style,
+            int customDustColor,
+            float dustScale
+    ) {
+        return switch (style) {
+            case ORANGE_DUST -> new DustParticleOptions(ORANGE_DUST_COLOR, dustScale);
+            case RED_DUST -> new DustParticleOptions(RED_DUST_COLOR, dustScale);
+            case CUSTOM_DUST -> new DustParticleOptions(customDustColor, dustScale);
+            case FLAME -> ParticleTypes.FLAME;
+            case END_ROD -> ParticleTypes.END_ROD;
+        };
     }
 
     private static List<LineSegment> createEdgeLines(Vec3[] corners) {
@@ -209,10 +236,10 @@ public final class CuboidParticleRenderer {
         return positions;
     }
 
-    private static <T extends ParticleOptions> void renderLines(
+    private static void renderLines(
             ServerPlayer player,
             List<LineSegment> lines,
-            T particle,
+            ParticleOptions particle,
             int particleBudget,
             double minimumSpacing,
             double renderDistanceSquared
