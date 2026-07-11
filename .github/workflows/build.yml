@@ -30,7 +30,20 @@ jobs:
           gradle-version: '9.1.0'
 
       - name: Build
-        run: gradle build --stacktrace
+        shell: bash
+        run: |
+          set +e
+          gradle build --stacktrace 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: error
 
       - name: Upload JAR
         if: success()
