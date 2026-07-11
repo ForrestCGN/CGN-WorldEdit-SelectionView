@@ -18,7 +18,7 @@ public final class CGNSelectionView {
 
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("wesv")
+                Commands.literal("cgnsv")
                         .requires(source -> source.hasPermission(2))
                         .executes(context -> showInfo(context.getSource()))
                         .then(Commands.literal("info")
