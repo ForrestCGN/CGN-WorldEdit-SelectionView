@@ -76,7 +76,8 @@ public final class CuboidParticleRenderer {
                 player.level().sendParticles(
                         player,
                         ParticleTypes.END_ROD,
-                        true,
+                        false,
+                        false,
                         point.x,
                         point.y,
                         point.z,
