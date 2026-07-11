@@ -6,9 +6,9 @@ Serverseitige Anzeige von WorldEdit-Auswahlen für NeoForge mit Vanilla-Partikel
 
 ## Status
 
-Version `0.2.1` displays complete WorldEdit cuboid selections with orange flame edges and a red helper grid on the selection surfaces. The visualization is calculated on the server and sent only to the player who enabled it. No client mod is required.
+Version `0.2.2` displays complete WorldEdit cuboid selections with orange flame edges and an adaptive red helper grid. A reloadable server config controls the default state, render interval, distance, particle limits, grid spacing and visible grid surfaces. No client mod is required.
 
-Version `0.2.1` zeigt vollständige WorldEdit-Quaderauswahlen mit orangefarbenen Flammenkanten und einem roten Hilfsraster auf den Auswahlflächen an. Die Darstellung wird auf dem Server berechnet und nur an den Spieler gesendet, der sie aktiviert hat. Eine Client-Mod ist nicht erforderlich.
+Version `0.2.2` zeigt vollständige WorldEdit-Quaderauswahlen mit orangefarbenen Flammenkanten und einem adaptiven roten Hilfsraster an. Eine neu ladbare Server-Config steuert Standardstatus, Aktualisierungsintervall, Distanz, Partikellimits, Rasterabstände und sichtbare Rasterflächen. Eine Client-Mod ist nicht erforderlich.
 
 ## Target / Ziel
 
@@ -24,10 +24,12 @@ Version `0.2.1` zeigt vollständige WorldEdit-Quaderauswahlen mit orangefarbenen
 1. Install WorldEdit on the NeoForge server.
 2. Put the CGN SelectionView JAR into the server's `mods` directory.
 3. Restart the server.
+4. Edit `config/cgn-selection-view-common.toml` when needed.
 
 1. WorldEdit auf dem NeoForge-Server installieren.
 2. Die CGN-SelectionView-JAR in den `mods`-Ordner des Servers legen.
 3. Den Server neu starten.
+4. Bei Bedarf `config/cgn-selection-view-common.toml` bearbeiten.
 
 ## Commands / Befehle
 
@@ -36,18 +38,46 @@ The commands currently require permission level 2.
 Die Befehle benötigen aktuell Berechtigungsstufe 2.
 
 - `/cgnsv` – show status and command overview / Status und Befehlsübersicht anzeigen
-- `/cgnsv on` – enable visualization / Anzeige aktivieren
-- `/cgnsv off` – disable visualization / Anzeige deaktivieren
-- `/cgnsv toggle` – toggle visualization / Anzeige umschalten
-- `/cgnsv info` – show version and supported selection type / Version und unterstützten Auswahltyp anzeigen
+- `/cgnsv on` – enable visualization for the current session / Anzeige für die aktuelle Sitzung aktivieren
+- `/cgnsv off` – disable visualization for the current session / Anzeige für die aktuelle Sitzung deaktivieren
+- `/cgnsv toggle` – toggle visualization for the current session / Anzeige für die aktuelle Sitzung umschalten
+- `/cgnsv info` – show version and active core settings / Version und aktive Kerneinstellungen anzeigen
+- `/cgnsv reload` – reload the server config / Server-Config neu laden
+
+## Configuration / Konfiguration
+
+The file is generated automatically on the first server start:
+
+Die Datei wird beim ersten Serverstart automatisch erzeugt:
+
+```text
+config/cgn-selection-view-common.toml
+```
+
+Available settings / Verfügbare Einstellungen:
+
+- `defaultEnabled` – default state for every new player session / Standardstatus für jede neue Spielersitzung
+- `allowPlayerToggle` – allows `on`, `off` and `toggle` / erlaubt `on`, `off` und `toggle`
+- `renderIntervalTicks` – update interval / Aktualisierungsintervall
+- `renderDistance` – maximum particle distance / maximale Partikelentfernung
+- `maxEdgeParticles` – flame particle budget / Budget für Flammenpartikel
+- `maxGridParticles` – red grid particle budget / Budget für rote Rasterpartikel
+- `minimumEdgeSpacing` – minimum flame spacing / minimaler Flammenabstand
+- `smallSelectionThreshold`, `smallGridSpacing` – small selection grid / Raster für kleine Auswahlen
+- `mediumSelectionThreshold`, `mediumGridSpacing` – medium selection grid / Raster für mittlere Auswahlen
+- `largeGridSpacing` – large selection grid / Raster für große Auswahlen
+- `gridTop`, `gridBottom`, `gridSides` – visible grid surfaces / sichtbare Rasterflächen
+
+The default is `defaultEnabled = true`. Player changes are intentionally not stored permanently. After logout or a server restart, the configured default applies again.
+
+Standardmäßig gilt `defaultEnabled = true`. Spieleränderungen werden bewusst nicht dauerhaft gespeichert. Nach Logout oder Serverneustart gilt wieder der konfigurierte Standard.
 
 ## Current limits / Aktuelle Grenzen
 
 - Cuboid selections only / Nur Quaderauswahlen
-- Up to 280 flame particles and 300 red helper particles per render pass / Bis zu 280 Flammenpartikel und 300 rote Hilfspartikel pro Renderdurchlauf
-- Particles are only sent within 256 blocks of the player / Partikel werden nur im Umkreis von 256 Blöcken gesendet
-- Large selections are automatically rendered with wider spacing / Große Auswahlen werden automatisch mit größeren Abständen dargestellt
-- Enabled state is kept until the server restarts / Der Aktivierungsstatus bleibt bis zum Serverneustart erhalten
+- Default budgets: 280 flame particles and 300 red grid particles per render pass / Standardbudgets: 280 Flammenpartikel und 300 rote Rasterpartikel pro Renderdurchlauf
+- Default render distance: 256 blocks / Standard-Sichtweite: 256 Blöcke
+- Large grids are internally limited to prevent excessive line generation / Große Raster werden intern begrenzt, um übermäßige Linienmengen zu verhindern
 
 ## Build
 

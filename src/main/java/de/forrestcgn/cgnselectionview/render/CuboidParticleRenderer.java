@@ -2,6 +2,7 @@ package de.forrestcgn.cgnselectionview.render;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import de.forrestcgn.cgnselectionview.config.SelectionViewConfig;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -12,13 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CuboidParticleRenderer {
-    private static final int MAX_EDGE_PARTICLES_PER_RENDER = 280;
-    private static final int MAX_HELPER_PARTICLES_PER_RENDER = 300;
-    private static final double MIN_EDGE_SPACING = 0.65D;
-    private static final double MIN_HELPER_SPACING = 1.0D;
-    private static final double MAX_RENDER_DISTANCE = 256.0D;
-    private static final double MAX_RENDER_DISTANCE_SQUARED = MAX_RENDER_DISTANCE * MAX_RENDER_DISTANCE;
-    private static final double[] HELPER_RATIOS = {0.25D, 0.5D, 0.75D};
+    private static final int MAX_GRID_POSITIONS_PER_AXIS = 64;
 
     private static final int[][] EDGES = {
             {0, 1}, {0, 2}, {0, 4},
@@ -33,7 +28,11 @@ public final class CuboidParticleRenderer {
     private CuboidParticleRenderer() {
     }
 
-    public static void render(ServerPlayer player, CuboidRegion region) {
+    public static void render(
+            ServerPlayer player,
+            CuboidRegion region,
+            SelectionViewConfig.Values config
+    ) {
         BlockVector3 minimum = region.getMinimumPoint();
         BlockVector3 maximum = region.getMaximumPoint();
 
@@ -55,22 +54,42 @@ public final class CuboidParticleRenderer {
                 new Vec3(maxX, maxY, maxZ)
         };
 
+        double width = maxX - minX;
+        double height = maxY - minY;
+        double depth = maxZ - minZ;
+        double selectionSize = Math.max(width, Math.max(height, depth));
+        double gridSpacing = config.gridSpacingFor(selectionSize);
+        double renderDistanceSquared = config.renderDistance() * config.renderDistance();
+
         List<LineSegment> edgeLines = createEdgeLines(corners);
-        List<LineSegment> helperLines = createHelperLines(minX, minY, minZ, maxX, maxY, maxZ);
+        List<LineSegment> gridLines = createGridLines(
+                minX,
+                minY,
+                minZ,
+                maxX,
+                maxY,
+                maxZ,
+                gridSpacing,
+                config.gridTop(),
+                config.gridBottom(),
+                config.gridSides()
+        );
 
         renderLines(
                 player,
                 edgeLines,
                 ParticleTypes.FLAME,
-                MAX_EDGE_PARTICLES_PER_RENDER,
-                MIN_EDGE_SPACING
+                config.maxEdgeParticles(),
+                config.minimumEdgeSpacing(),
+                renderDistanceSquared
         );
         renderLines(
                 player,
-                helperLines,
+                gridLines,
                 DustParticleOptions.REDSTONE,
-                MAX_HELPER_PARTICLES_PER_RENDER,
-                MIN_HELPER_SPACING
+                config.maxGridParticles(),
+                gridSpacing,
+                renderDistanceSquared
         );
     }
 
@@ -82,38 +101,112 @@ public final class CuboidParticleRenderer {
         return lines;
     }
 
-    private static List<LineSegment> createHelperLines(
+    private static List<LineSegment> createGridLines(
             double minX,
             double minY,
             double minZ,
             double maxX,
             double maxY,
-            double maxZ
+            double maxZ,
+            double requestedSpacing,
+            boolean gridTop,
+            boolean gridBottom,
+            boolean gridSides
     ) {
         List<LineSegment> lines = new ArrayList<>();
+        List<Double> xPositions = createInteriorPositions(minX, maxX, requestedSpacing);
+        List<Double> yPositions = createInteriorPositions(minY, maxY, requestedSpacing);
+        List<Double> zPositions = createInteriorPositions(minZ, maxZ, requestedSpacing);
 
-        for (double ratio : HELPER_RATIOS) {
-            double x = lerp(minX, maxX, ratio);
-            double z = lerp(minZ, maxZ, ratio);
+        if (gridBottom) {
+            addHorizontalGrid(lines, minY, minX, minZ, maxX, maxZ, xPositions, zPositions);
+        }
+        if (gridTop) {
+            addHorizontalGrid(lines, maxY, minX, minZ, maxX, maxZ, xPositions, zPositions);
+        }
+        if (gridSides) {
+            addSideGrids(
+                    lines,
+                    minX,
+                    minY,
+                    minZ,
+                    maxX,
+                    maxY,
+                    maxZ,
+                    xPositions,
+                    yPositions,
+                    zPositions
+            );
+        }
 
-            lines.add(new LineSegment(new Vec3(minX, minY, z), new Vec3(maxX, minY, z)));
-            lines.add(new LineSegment(new Vec3(minX, maxY, z), new Vec3(maxX, maxY, z)));
-            lines.add(new LineSegment(new Vec3(x, minY, minZ), new Vec3(x, minY, maxZ)));
-            lines.add(new LineSegment(new Vec3(x, maxY, minZ), new Vec3(x, maxY, maxZ)));
+        return lines;
+    }
 
+    private static void addHorizontalGrid(
+            List<LineSegment> lines,
+            double y,
+            double minX,
+            double minZ,
+            double maxX,
+            double maxZ,
+            List<Double> xPositions,
+            List<Double> zPositions
+    ) {
+        for (double z : zPositions) {
+            lines.add(new LineSegment(new Vec3(minX, y, z), new Vec3(maxX, y, z)));
+        }
+        for (double x : xPositions) {
+            lines.add(new LineSegment(new Vec3(x, y, minZ), new Vec3(x, y, maxZ)));
+        }
+    }
+
+    private static void addSideGrids(
+            List<LineSegment> lines,
+            double minX,
+            double minY,
+            double minZ,
+            double maxX,
+            double maxY,
+            double maxZ,
+            List<Double> xPositions,
+            List<Double> yPositions,
+            List<Double> zPositions
+    ) {
+        for (double x : xPositions) {
             lines.add(new LineSegment(new Vec3(x, minY, minZ), new Vec3(x, maxY, minZ)));
             lines.add(new LineSegment(new Vec3(x, minY, maxZ), new Vec3(x, maxY, maxZ)));
+        }
+        for (double z : zPositions) {
             lines.add(new LineSegment(new Vec3(minX, minY, z), new Vec3(minX, maxY, z)));
             lines.add(new LineSegment(new Vec3(maxX, minY, z), new Vec3(maxX, maxY, z)));
         }
+        for (double y : yPositions) {
+            lines.add(new LineSegment(new Vec3(minX, y, minZ), new Vec3(maxX, y, minZ)));
+            lines.add(new LineSegment(new Vec3(minX, y, maxZ), new Vec3(maxX, y, maxZ)));
+            lines.add(new LineSegment(new Vec3(minX, y, minZ), new Vec3(minX, y, maxZ)));
+            lines.add(new LineSegment(new Vec3(maxX, y, minZ), new Vec3(maxX, y, maxZ)));
+        }
+    }
 
-        double middleY = lerp(minY, maxY, 0.5D);
-        lines.add(new LineSegment(new Vec3(minX, middleY, minZ), new Vec3(maxX, middleY, minZ)));
-        lines.add(new LineSegment(new Vec3(minX, middleY, maxZ), new Vec3(maxX, middleY, maxZ)));
-        lines.add(new LineSegment(new Vec3(minX, middleY, minZ), new Vec3(minX, middleY, maxZ)));
-        lines.add(new LineSegment(new Vec3(maxX, middleY, minZ), new Vec3(maxX, middleY, maxZ)));
+    private static List<Double> createInteriorPositions(double minimum, double maximum, double requestedSpacing) {
+        double length = maximum - minimum;
+        if (length <= requestedSpacing) {
+            return List.of();
+        }
 
-        return lines;
+        double safeSpacing = Math.max(
+                requestedSpacing,
+                length / (MAX_GRID_POSITIONS_PER_AXIS + 1.0D)
+        );
+        List<Double> positions = new ArrayList<>();
+
+        for (double position = minimum + safeSpacing;
+             position < maximum - 0.0001D && positions.size() < MAX_GRID_POSITIONS_PER_AXIS;
+             position += safeSpacing) {
+            positions.add(position);
+        }
+
+        return positions;
     }
 
     private static <T extends ParticleOptions> void renderLines(
@@ -121,8 +214,13 @@ public final class CuboidParticleRenderer {
             List<LineSegment> lines,
             T particle,
             int particleBudget,
-            double minimumSpacing
+            double minimumSpacing,
+            double renderDistanceSquared
     ) {
+        if (particleBudget <= 0 || lines.isEmpty()) {
+            return;
+        }
+
         double totalLength = 0.0D;
         for (LineSegment line : lines) {
             totalLength += line.length();
@@ -143,7 +241,7 @@ public final class CuboidParticleRenderer {
 
                 double progress = step / (double) steps;
                 Vec3 point = line.start().lerp(line.end(), progress);
-                if (point.distanceToSqr(playerPosition) > MAX_RENDER_DISTANCE_SQUARED) {
+                if (point.distanceToSqr(playerPosition) > renderDistanceSquared) {
                     continue;
                 }
 
@@ -164,10 +262,6 @@ public final class CuboidParticleRenderer {
                 sentParticles++;
             }
         }
-    }
-
-    private static double lerp(double start, double end, double ratio) {
-        return start + (end - start) * ratio;
     }
 
     private record LineSegment(Vec3 start, Vec3 end) {
