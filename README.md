@@ -6,9 +6,9 @@ Serverseitige Anzeige von WorldEdit-Auswahlen für NeoForge mit Vanilla-Partikel
 
 ## Status
 
-Version `0.2.0` displays complete WorldEdit cuboid selections as particle outlines. The visualization is calculated on the server and sent only to the player who enabled it. No client mod is required.
+Version `0.2.1` displays complete WorldEdit cuboid selections with orange flame edges and a red helper grid on the selection surfaces. The visualization is calculated on the server and sent only to the player who enabled it. No client mod is required.
 
-Version `0.2.0` zeigt vollständige WorldEdit-Quaderauswahlen als Partikelrahmen an. Die Darstellung wird auf dem Server berechnet und nur an den Spieler gesendet, der sie aktiviert hat. Eine Client-Mod ist nicht erforderlich.
+Version `0.2.1` zeigt vollständige WorldEdit-Quaderauswahlen mit orangefarbenen Flammenkanten und einem roten Hilfsraster auf den Auswahlflächen an. Die Darstellung wird auf dem Server berechnet und nur an den Spieler gesendet, der sie aktiviert hat. Eine Client-Mod ist nicht erforderlich.
 
 ## Target / Ziel
 
@@ -44,8 +44,8 @@ Die Befehle benötigen aktuell Berechtigungsstufe 2.
 ## Current limits / Aktuelle Grenzen
 
 - Cuboid selections only / Nur Quaderauswahlen
-- Maximum 240 particles per render pass / Maximal 240 Partikel pro Renderdurchlauf
-- Particles are only sent within 128 blocks of the player / Partikel werden nur im Umkreis von 128 Blöcken gesendet
+- Up to 280 flame particles and 300 red helper particles per render pass / Bis zu 280 Flammenpartikel und 300 rote Hilfspartikel pro Renderdurchlauf
+- Particles are only sent within 256 blocks of the player / Partikel werden nur im Umkreis von 256 Blöcken gesendet
 - Large selections are automatically rendered with wider spacing / Große Auswahlen werden automatisch mit größeren Abständen dargestellt
 - Enabled state is kept until the server restarts / Der Aktivierungsstatus bleibt bis zum Serverneustart erhalten
 
