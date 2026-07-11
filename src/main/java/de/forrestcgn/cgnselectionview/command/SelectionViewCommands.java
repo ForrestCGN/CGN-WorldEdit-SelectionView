@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.forrestcgn.cgnselectionview.CGNSelectionView;
 import de.forrestcgn.cgnselectionview.config.SelectionViewConfig;
+import de.forrestcgn.cgnselectionview.permission.SelectionViewPermissions;
 import de.forrestcgn.cgnselectionview.service.SelectionViewService;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -22,19 +23,41 @@ public final class SelectionViewCommands {
     ) {
         dispatcher.register(
                 Commands.literal("cgnsv")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .executes(context -> showInfo(context.getSource(), service, config))
+                        .requires(source -> SelectionViewPermissions.canViewInfo(source)
+                                || SelectionViewPermissions.canToggle(source)
+                                || SelectionViewPermissions.canReload(source))
+                        .executes(context -> showInfoIfAllowed(context.getSource(), service, config))
                         .then(Commands.literal("info")
+                                .requires(SelectionViewPermissions::canViewInfo)
                                 .executes(context -> showInfo(context.getSource(), service, config)))
                         .then(Commands.literal("on")
+                                .requires(SelectionViewPermissions::canToggle)
                                 .executes(context -> setEnabled(context.getSource(), service, config, true)))
                         .then(Commands.literal("off")
+                                .requires(SelectionViewPermissions::canToggle)
                                 .executes(context -> setEnabled(context.getSource(), service, config, false)))
                         .then(Commands.literal("toggle")
+                                .requires(SelectionViewPermissions::canToggle)
                                 .executes(context -> toggle(context.getSource(), service, config)))
                         .then(Commands.literal("reload")
+                                .requires(SelectionViewPermissions::canReload)
                                 .executes(context -> reload(context.getSource(), service, config)))
         );
+    }
+
+    private static int showInfoIfAllowed(
+            CommandSourceStack source,
+            SelectionViewService service,
+            SelectionViewConfig config
+    ) {
+        if (!SelectionViewPermissions.canViewInfo(source)) {
+            source.sendFailure(Component.literal(
+                    "[CGNSV] Keine Berechtigung für Informationen. / No permission to view information."
+            ));
+            return 0;
+        }
+
+        return showInfo(source, service, config);
     }
 
     private static int setEnabled(
