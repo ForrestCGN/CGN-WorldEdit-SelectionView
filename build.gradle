@@ -18,7 +18,7 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url = 'https://maven.enginehub.org/repo/' }
+    maven { url = 'https://repo.enginehub.org/libs-release/' }
 }
 
 neoForge {
@@ -42,8 +42,8 @@ neoForge {
 }
 
 dependencies {
-    compileOnly "com.sk89q.worldedit:worldedit-mod:${worldedit_version}"
-    runtimeOnly "com.sk89q.worldedit:worldedit-mod:${worldedit_version}"
+    compileOnly "com.sk89q.worldedit:worldedit-neoforge-mc26.1:${worldedit_version}"
+    runtimeOnly "com.sk89q.worldedit:worldedit-neoforge-mc26.1:${worldedit_version}"
 }
 
 processResources {
