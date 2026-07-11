@@ -20,7 +20,7 @@ public final class SelectionViewCommands {
     ) {
         dispatcher.register(
                 Commands.literal("cgnsv")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(context -> showInfo(context.getSource(), service))
                         .then(Commands.literal("info")
                                 .executes(context -> showInfo(context.getSource(), service)))
