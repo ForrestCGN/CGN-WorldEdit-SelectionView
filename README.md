@@ -68,3 +68,5 @@ MIT
 This is an independent community project and is not affiliated with or endorsed by EngineHub or the WorldEdit project.
 
 Dies ist ein unabhängiges Community-Projekt und steht nicht in Verbindung mit EngineHub oder dem WorldEdit-Projekt.
+
+<!-- CI validation branch -->
