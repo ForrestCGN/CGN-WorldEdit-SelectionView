@@ -6,9 +6,9 @@ Serverseitige Anzeige von WorldEdit-Auswahlen für NeoForge mit Vanilla-Partikel
 
 ## Status
 
-Version `0.2.4` displays complete WorldEdit cuboid selections with four selectable particle styles for the outer edges and helper grid. The default is flame outer edges with an orange dust helper grid. No client mod is required.
+Version `0.2.5` displays complete WorldEdit cuboid selections with four selectable particle styles for the outer edges and helper grid. Personal commands are available to normal players by default, while NeoForge permission nodes allow permission managers such as LuckPerms to control access. No client mod is required.
 
-Version `0.2.4` zeigt vollständige WorldEdit-Quaderauswahlen mit vier auswählbaren Partikelstilen für Außenkanten und Hilfsraster. Standard sind Flammen-Außenkanten mit einem orangefarbenen Dust-Hilfsraster. Eine Client-Mod ist nicht erforderlich.
+Version `0.2.5` zeigt vollständige WorldEdit-Quaderauswahlen mit vier auswählbaren Partikelstilen für Außenkanten und Hilfsraster. Persönliche Befehle stehen normalen Spielern standardmäßig zur Verfügung, während NeoForge-Permission-Nodes die Steuerung über Rechteverwaltungen wie LuckPerms ermöglichen. Eine Client-Mod ist nicht erforderlich.
 
 ## Target / Ziel
 
@@ -33,9 +33,9 @@ Version `0.2.4` zeigt vollständige WorldEdit-Quaderauswahlen mit vier auswählb
 
 ## Commands / Befehle
 
-The commands currently require permission level 2.
+Normal players can use the personal commands by default. `/cgnsv reload` still requires operator level 2 or the dedicated reload permission.
 
-Die Befehle benötigen aktuell Berechtigungsstufe 2.
+Normale Spieler können die persönlichen Befehle standardmäßig verwenden. `/cgnsv reload` benötigt weiterhin Operator-Level 2 oder die eigene Reload-Berechtigung.
 
 - `/cgnsv` – show status and command overview / Status und Befehlsübersicht anzeigen
 - `/cgnsv on` – enable visualization for the current session / Anzeige für die aktuelle Sitzung aktivieren
@@ -43,6 +43,34 @@ Die Befehle benötigen aktuell Berechtigungsstufe 2.
 - `/cgnsv toggle` – toggle visualization for the current session / Anzeige für die aktuelle Sitzung umschalten
 - `/cgnsv info` – show version and active core settings / Version und aktive Kerneinstellungen anzeigen
 - `/cgnsv reload` – reload the server config / Server-Config neu laden
+
+## Permissions / Berechtigungen
+
+The mod registers native NeoForge permission nodes. A separate permission manager is optional. Without one, the documented default values are used.
+
+Die Mod registriert native NeoForge-Permission-Nodes. Eine zusätzliche Rechteverwaltung ist optional. Ohne diese gelten die angegebenen Standardwerte.
+
+- `cgnselectionview.use` – master access to personal commands / Hauptzugriff auf persönliche Befehle – default / Standard: `true`
+- `cgnselectionview.toggle` – access to `on`, `off` and `toggle` / Zugriff auf `on`, `off` und `toggle` – default / Standard: `true`
+- `cgnselectionview.info` – access to `/cgnsv` and `info` / Zugriff auf `/cgnsv` und `info` – default / Standard: `true`
+- `cgnselectionview.reload` – access to `reload` without operator level 2 / Zugriff auf `reload` ohne Operator-Level 2 – default / Standard: `false`
+
+Operator level 2 can always use `/cgnsv reload`.
+
+Operator-Level 2 kann `/cgnsv reload` immer verwenden.
+
+Example for LuckPerms / Beispiel für LuckPerms:
+
+```text
+/lp group default permission set cgnselectionview.use true
+/lp group default permission set cgnselectionview.toggle true
+/lp group default permission set cgnselectionview.info true
+/lp group admin permission set cgnselectionview.reload true
+```
+
+To disable personal commands for a group, set `cgnselectionview.use` to `false` for that group.
+
+Um die persönlichen Befehle für eine Gruppe zu deaktivieren, wird `cgnselectionview.use` für diese Gruppe auf `false` gesetzt.
 
 ## Configuration / Konfiguration
 
@@ -116,7 +144,12 @@ Standardmäßig gilt `defaultEnabled = true`. Spieleränderungen werden bewusst 
 - Default budgets: 280 edge particles and 300 grid particles per render pass / Standardbudgets: 280 Kantenpartikel und 300 Rasterpartikel pro Renderdurchlauf
 - Default render distance: 256 blocks / Standard-Sichtweite: 256 Blöcke
 - Large grids are internally limited to prevent excessive line generation / Große Raster werden intern begrenzt, um übermäßige Linienmengen zu verhindern
-- True rendered debug lines still require a client mod / Echte gerenderte Debug-Linien benötigen weiterhin eine Client-Mod
+
+## Other versions / Weitere Versionen
+
+Ports to other Minecraft and NeoForge versions can be requested. Please include the desired Minecraft, NeoForge and WorldEdit versions.
+
+Portierungen auf weitere Minecraft- und NeoForge-Versionen können angefragt werden. Bitte dabei die gewünschte Minecraft-, NeoForge- und WorldEdit-Version angeben.
 
 ## Build
 
