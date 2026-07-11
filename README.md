@@ -6,9 +6,9 @@ Serverseitige Anzeige von WorldEdit-Auswahlen für NeoForge mit Vanilla-Partikel
 
 ## Status
 
-Version `0.2.2` displays complete WorldEdit cuboid selections with orange flame edges and an adaptive red helper grid. A reloadable server config controls the default state, render interval, distance, particle limits, grid spacing and visible grid surfaces. No client mod is required.
+Version `0.2.3` displays complete WorldEdit cuboid selections with configurable particle styles for the outer edges and helper grid. Dust colors and sizes can be changed in the reloadable server config. The default is a quiet orange dust outline with a red dust grid. No client mod is required.
 
-Version `0.2.2` zeigt vollständige WorldEdit-Quaderauswahlen mit orangefarbenen Flammenkanten und einem adaptiven roten Hilfsraster an. Eine neu ladbare Server-Config steuert Standardstatus, Aktualisierungsintervall, Distanz, Partikellimits, Rasterabstände und sichtbare Rasterflächen. Eine Client-Mod ist nicht erforderlich.
+Version `0.2.3` zeigt vollständige WorldEdit-Quaderauswahlen mit konfigurierbaren Partikelstilen für Außenkanten und Hilfsraster. Dust-Farben und -Größen lassen sich über die neu ladbare Server-Config ändern. Standardmäßig werden ein ruhiger orangefarbener Dust-Rahmen und ein rotes Dust-Raster verwendet. Eine Client-Mod ist nicht erforderlich.
 
 ## Target / Ziel
 
@@ -54,15 +54,62 @@ Die Datei wird beim ersten Serverstart automatisch erzeugt:
 config/cgn-selection-view-common.toml
 ```
 
-Available settings / Verfügbare Einstellungen:
+Existing `0.2.2` config files are kept. Missing particle settings are appended automatically when `0.2.3` starts or reloads the config.
+
+Vorhandene Config-Dateien aus `0.2.2` bleiben erhalten. Fehlende Partikeleinstellungen werden beim Start oder Neuladen mit `0.2.3` automatisch ergänzt.
+
+### Particle styles / Partikelstile
+
+```toml
+edgeParticleStyle = "orange_dust"
+gridParticleStyle = "red_dust"
+
+edgeDustColor = "#FF6600"
+gridDustColor = "#FF0000"
+
+edgeDustScale = 1.25
+gridDustScale = 0.8
+```
+
+Supported values / Unterstützte Werte:
+
+- `orange_dust` – fixed orange dust / festes orangefarbenes Dust
+- `red_dust` – fixed red dust / festes rotes Dust
+- `custom_dust` – uses the configured `#RRGGBB` color / verwendet die konfigurierte `#RRGGBB`-Farbe
+- `flame` – animated flame particle / animiertes Flammenpartikel
+- `end_rod` – white end-rod particle / weißes Endstab-Partikel
+
+`edgeDustColor` and `gridDustColor` are used only when the corresponding style is `custom_dust`. The scale values apply to all dust styles.
+
+`edgeDustColor` und `gridDustColor` werden nur verwendet, wenn der jeweilige Stil `custom_dust` ist. Die Größenwerte gelten für alle Dust-Stile.
+
+Example with a custom blue outline:
+
+Beispiel mit einem eigenen blauen Rahmen:
+
+```toml
+edgeParticleStyle = "custom_dust"
+edgeDustColor = "#2080FF"
+edgeDustScale = 1.2
+```
+
+Apply changes without a server restart:
+
+Änderungen ohne Serverneustart übernehmen:
+
+```text
+/cgnsv reload
+```
+
+### Other settings / Weitere Einstellungen
 
 - `defaultEnabled` – default state for every new player session / Standardstatus für jede neue Spielersitzung
 - `allowPlayerToggle` – allows `on`, `off` and `toggle` / erlaubt `on`, `off` und `toggle`
 - `renderIntervalTicks` – update interval / Aktualisierungsintervall
 - `renderDistance` – maximum particle distance / maximale Partikelentfernung
-- `maxEdgeParticles` – flame particle budget / Budget für Flammenpartikel
-- `maxGridParticles` – red grid particle budget / Budget für rote Rasterpartikel
-- `minimumEdgeSpacing` – minimum flame spacing / minimaler Flammenabstand
+- `maxEdgeParticles` – outer edge particle budget / Partikelbudget für Außenkanten
+- `maxGridParticles` – helper grid particle budget / Partikelbudget für das Hilfsraster
+- `minimumEdgeSpacing` – minimum outer edge spacing / minimaler Partikelabstand der Außenkanten
 - `smallSelectionThreshold`, `smallGridSpacing` – small selection grid / Raster für kleine Auswahlen
 - `mediumSelectionThreshold`, `mediumGridSpacing` – medium selection grid / Raster für mittlere Auswahlen
 - `largeGridSpacing` – large selection grid / Raster für große Auswahlen
@@ -75,9 +122,10 @@ Standardmäßig gilt `defaultEnabled = true`. Spieleränderungen werden bewusst 
 ## Current limits / Aktuelle Grenzen
 
 - Cuboid selections only / Nur Quaderauswahlen
-- Default budgets: 280 flame particles and 300 red grid particles per render pass / Standardbudgets: 280 Flammenpartikel und 300 rote Rasterpartikel pro Renderdurchlauf
+- Default budgets: 280 edge particles and 300 grid particles per render pass / Standardbudgets: 280 Kantenpartikel und 300 Rasterpartikel pro Renderdurchlauf
 - Default render distance: 256 blocks / Standard-Sichtweite: 256 Blöcke
 - Large grids are internally limited to prevent excessive line generation / Große Raster werden intern begrenzt, um übermäßige Linienmengen zu verhindern
+- True rendered debug lines still require a client mod / Echte gerenderte Debug-Linien benötigen weiterhin eine Client-Mod
 
 ## Build
 

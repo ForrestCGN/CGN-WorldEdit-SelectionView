@@ -125,6 +125,10 @@ public final class SelectionViewCommands {
                         + " | Intervall / Interval: " + values.renderIntervalTicks() + " Ticks"
         ), false);
         source.sendSuccess(() -> Component.literal(
+                "Partikel / Particles: Kante / Edge=" + values.edgeParticleStyle().configName()
+                        + " | Raster / Grid=" + values.gridParticleStyle().configName()
+        ), false);
+        source.sendSuccess(() -> Component.literal(
                 "Befehle / Commands: /cgnsv on | off | toggle | info | reload"
         ), false);
         source.sendSuccess(() -> Component.literal(
