@@ -1,0 +1,68 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.120'
+}
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = 'cgn-selection-view'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.enginehub.org/repo/' }
+}
+
+neoForge {
+    version = neoforge_version
+
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+    }
+
+    mods {
+        cgn_selection_view {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    compileOnly "com.sk89q.worldedit:worldedit-mod:${worldedit_version}"
+    runtimeOnly "com.sk89q.worldedit:worldedit-mod:${worldedit_version}"
+}
+
+processResources {
+    def replaceProperties = [
+            minecraft_version: minecraft_version,
+            neoforge_version: neoforge_version,
+            worldedit_version: worldedit_version,
+            mod_id: mod_id,
+            mod_name: mod_name,
+            mod_version: mod_version,
+            mod_authors: mod_authors,
+            mod_description: mod_description
+    ]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
