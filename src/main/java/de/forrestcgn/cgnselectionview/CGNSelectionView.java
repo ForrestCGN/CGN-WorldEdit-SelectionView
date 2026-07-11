@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 @Mod(CGNSelectionView.MOD_ID)
 public final class CGNSelectionView {
     public static final String MOD_ID = "cgn_selection_view";
-    public static final String VERSION = "0.2.0";
+    public static final String VERSION = "0.2.1";
 
     private final SelectionViewService selectionViewService = new SelectionViewService();
 
