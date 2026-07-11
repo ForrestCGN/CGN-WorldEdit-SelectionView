@@ -79,12 +79,10 @@ public final class CuboidParticleRenderer {
 
         ParticleOptions edgeParticle = createParticle(
                 config.edgeParticleStyle(),
-                config.edgeDustColor(),
                 config.edgeDustScale()
         );
         ParticleOptions gridParticle = createParticle(
                 config.gridParticleStyle(),
-                config.gridDustColor(),
                 config.gridDustScale()
         );
 
@@ -108,14 +106,12 @@ public final class CuboidParticleRenderer {
 
     private static ParticleOptions createParticle(
             SelectionViewConfig.ParticleStyle style,
-            int customDustColor,
             float dustScale
     ) {
         return switch (style) {
+            case FLAME -> ParticleTypes.FLAME;
             case ORANGE_DUST -> new DustParticleOptions(ORANGE_DUST_COLOR, dustScale);
             case RED_DUST -> new DustParticleOptions(RED_DUST_COLOR, dustScale);
-            case CUSTOM_DUST -> new DustParticleOptions(customDustColor, dustScale);
-            case FLAME -> ParticleTypes.FLAME;
             case END_ROD -> ParticleTypes.END_ROD;
         };
     }

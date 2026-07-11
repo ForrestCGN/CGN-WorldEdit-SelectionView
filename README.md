@@ -6,9 +6,9 @@ Serverseitige Anzeige von WorldEdit-Auswahlen für NeoForge mit Vanilla-Partikel
 
 ## Status
 
-Version `0.2.3` displays complete WorldEdit cuboid selections with configurable particle styles for the outer edges and helper grid. Dust colors and sizes can be changed in the reloadable server config. The default is a quiet orange dust outline with a red dust grid. No client mod is required.
+Version `0.2.4` displays complete WorldEdit cuboid selections with four selectable particle styles for the outer edges and helper grid. The default is flame outer edges with an orange dust helper grid. No client mod is required.
 
-Version `0.2.3` zeigt vollständige WorldEdit-Quaderauswahlen mit konfigurierbaren Partikelstilen für Außenkanten und Hilfsraster. Dust-Farben und -Größen lassen sich über die neu ladbare Server-Config ändern. Standardmäßig werden ein ruhiger orangefarbener Dust-Rahmen und ein rotes Dust-Raster verwendet. Eine Client-Mod ist nicht erforderlich.
+Version `0.2.4` zeigt vollständige WorldEdit-Quaderauswahlen mit vier auswählbaren Partikelstilen für Außenkanten und Hilfsraster. Standard sind Flammen-Außenkanten mit einem orangefarbenen Dust-Hilfsraster. Eine Client-Mod ist nicht erforderlich.
 
 ## Target / Ziel
 
@@ -54,44 +54,35 @@ Die Datei wird beim ersten Serverstart automatisch erzeugt:
 config/cgn-selection-view-common.toml
 ```
 
-Existing `0.2.2` config files are kept. Missing particle settings are appended automatically when `0.2.3` starts or reloads the config.
+Existing config files are migrated automatically to the clean `0.2.4` format. Removed custom-color settings are deleted, legacy `custom_dust` values become `orange_dust`, and all unrelated settings are retained.
 
-Vorhandene Config-Dateien aus `0.2.2` bleiben erhalten. Fehlende Partikeleinstellungen werden beim Start oder Neuladen mit `0.2.3` automatisch ergänzt.
+Vorhandene Config-Dateien werden automatisch in das aufgeräumte Format von `0.2.4` migriert. Entfernte Einstellungen für eigene Farben werden gelöscht, alte `custom_dust`-Werte werden zu `orange_dust`, und alle übrigen Einstellungen bleiben erhalten.
 
 ### Particle styles / Partikelstile
 
 ```toml
-edgeParticleStyle = "orange_dust"
-gridParticleStyle = "red_dust"
+# Supported / Unterstützt:
+# flame, orange_dust, red_dust, end_rod
 
-edgeDustColor = "#FF6600"
-gridDustColor = "#FF0000"
+edgeParticleStyle = "flame"
+gridParticleStyle = "orange_dust"
 
 edgeDustScale = 1.25
 gridDustScale = 0.8
 ```
 
-Supported values / Unterstützte Werte:
+Exactly these four values can be used for both `edgeParticleStyle` and `gridParticleStyle`:
 
-- `orange_dust` – fixed orange dust / festes orangefarbenes Dust
-- `red_dust` – fixed red dust / festes rotes Dust
-- `custom_dust` – uses the configured `#RRGGBB` color / verwendet die konfigurierte `#RRGGBB`-Farbe
-- `flame` – animated flame particle / animiertes Flammenpartikel
-- `end_rod` – white end-rod particle / weißes Endstab-Partikel
+Für `edgeParticleStyle` und `gridParticleStyle` können genau diese vier Werte verwendet werden:
 
-`edgeDustColor` and `gridDustColor` are used only when the corresponding style is `custom_dust`. The scale values apply to all dust styles.
+- `flame` – animated orange flame / animierte orangefarbene Flamme
+- `orange_dust` – orange dust / orangefarbenes Dust
+- `red_dust` – red dust / rotes Dust
+- `end_rod` – bright white end-rod particle / heller weißer Endstab-Partikel
 
-`edgeDustColor` und `gridDustColor` werden nur verwendet, wenn der jeweilige Stil `custom_dust` ist. Die Größenwerte gelten für alle Dust-Stile.
+The scale values affect only `orange_dust` and `red_dust`. They have no effect on `flame` or `end_rod`.
 
-Example with a custom blue outline:
-
-Beispiel mit einem eigenen blauen Rahmen:
-
-```toml
-edgeParticleStyle = "custom_dust"
-edgeDustColor = "#2080FF"
-edgeDustScale = 1.2
-```
+Die Größenwerte wirken nur bei `orange_dust` und `red_dust`. Bei `flame` und `end_rod` haben sie keine Wirkung.
 
 Apply changes without a server restart:
 

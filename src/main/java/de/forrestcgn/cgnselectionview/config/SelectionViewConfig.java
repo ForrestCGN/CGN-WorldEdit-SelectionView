@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,72 +17,7 @@ public final class SelectionViewConfig {
     public static final String FILE_NAME = "cgn-selection-view-common.toml";
 
     private static final Logger LOGGER = LogUtils.getLogger();
-
-    private static final String PARTICLE_STYLE_CONTENT = """
-            # Particle styles for outer edges and helper grid.
-            # Partikelstile für Außenkanten und Hilfsraster.
-            # Supported / Unterstützt: orange_dust, red_dust, custom_dust, flame, end_rod
-            edgeParticleStyle = "orange_dust"
-            gridParticleStyle = "red_dust"
-
-            # Custom dust colors in #RRGGBB format. Used only with custom_dust.
-            # Eigene Dust-Farben im Format #RRGGBB. Nur bei custom_dust verwendet.
-            edgeDustColor = "#FF6600"
-            gridDustColor = "#FF0000"
-
-            # Dust particle size. Used by all dust styles.
-            # Größe der Dust-Partikel. Wird von allen Dust-Stilen verwendet.
-            edgeDustScale = 1.25
-            gridDustScale = 0.8
-            """;
-
-    private static final String DEFAULT_CONTENT = """
-            # CGN SelectionView for WorldEdit
-            # Server configuration / Server-Konfiguration
-
-            # Enable the visualization by default for every player session.
-            # Aktiviert die Anzeige standardmäßig für jede Spielersitzung.
-            defaultEnabled = true
-
-            # Allow the existing on/off/toggle commands.
-            # Erlaubt die vorhandenen Befehle on/off/toggle.
-            allowPlayerToggle = true
-
-            # Render interval in server ticks. 20 ticks = 1 second.
-            # Aktualisierungsintervall in Server-Ticks. 20 Ticks = 1 Sekunde.
-            renderIntervalTicks = 10
-
-            # Maximum distance between the player and a rendered particle.
-            # Maximale Entfernung zwischen Spieler und angezeigtem Partikel.
-            renderDistance = 256.0
-
-            # Particle limits per render pass.
-            # Partikellimits pro Renderdurchlauf.
-            maxEdgeParticles = 280
-            maxGridParticles = 300
-
-            # Minimum spacing between particles on the outer edges.
-            # Mindestabstand der Partikel auf den Außenkanten.
-            minimumEdgeSpacing = 0.65
-
-            """ + PARTICLE_STYLE_CONTENT + """
-
-            # Adaptive grid spacing. Selection size is the longest cuboid edge.
-            # Adaptiver Rasterabstand. Als Auswahlgröße gilt die längste Quaderkante.
-            smallSelectionThreshold = 20.0
-            smallGridSpacing = 4.0
-
-            mediumSelectionThreshold = 80.0
-            mediumGridSpacing = 6.0
-
-            largeGridSpacing = 10.0
-
-            # Select which surfaces receive the helper grid.
-            # Legt fest, welche Flächen das Hilfsraster erhalten.
-            gridTop = true
-            gridBottom = true
-            gridSides = true
-            """;
+    private static final int CONFIG_VERSION = 2;
 
     private final Path path;
     private volatile Values values = Values.defaults();
@@ -108,11 +42,11 @@ public final class SelectionViewConfig {
         try {
             Files.createDirectories(path.getParent());
             if (Files.notExists(path)) {
-                Files.writeString(path, DEFAULT_CONTENT, StandardCharsets.UTF_8);
+                Files.writeString(path, renderConfig(Values.defaults()), StandardCharsets.UTF_8);
             }
 
             List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-            if (appendMissingParticleSettings(lines)) {
+            if (migrateConfigIfNeeded(lines)) {
                 lines = Files.readAllLines(path, StandardCharsets.UTF_8);
             }
 
@@ -128,60 +62,40 @@ public final class SelectionViewConfig {
         }
     }
 
-    private boolean appendMissingParticleSettings(List<String> lines) throws IOException {
-        StringBuilder appendix = new StringBuilder();
-        appendMissingSetting(lines, appendix, "edgeParticleStyle", "edgeParticleStyle = \"orange_dust\"");
-        appendMissingSetting(lines, appendix, "gridParticleStyle", "gridParticleStyle = \"red_dust\"");
-        appendMissingSetting(lines, appendix, "edgeDustColor", "edgeDustColor = \"#FF6600\"");
-        appendMissingSetting(lines, appendix, "gridDustColor", "gridDustColor = \"#FF0000\"");
-        appendMissingSetting(lines, appendix, "edgeDustScale", "edgeDustScale = 1.25");
-        appendMissingSetting(lines, appendix, "gridDustScale", "gridDustScale = 0.8");
+    private boolean migrateConfigIfNeeded(List<String> lines) throws IOException {
+        Map<String, String> entries = parseEntries(lines);
+        int configVersion = readInt(entries, "configVersion", 0, 0, CONFIG_VERSION);
+        boolean removedColorSettings = entries.containsKey("edgeDustColor") || entries.containsKey("gridDustColor");
+        boolean legacyParticleStyle = isLegacyParticleStyle(entries.get("edgeParticleStyle"))
+                || isLegacyParticleStyle(entries.get("gridParticleStyle"));
 
-        if (appendix.isEmpty()) {
+        if (configVersion >= CONFIG_VERSION && !removedColorSettings && !legacyParticleStyle) {
             return false;
         }
 
-        String header = """
+        Values migratedValues = readValues(entries, true);
 
-                # Particle styles added by CGN SelectionView 0.2.3.
-                # Partikelstile, ergänzt durch CGN SelectionView 0.2.3.
-                # Supported / Unterstützt: orange_dust, red_dust, custom_dust, flame, end_rod
-                # Dust colors use #RRGGBB and apply only to custom_dust.
-                # Dust-Farben verwenden #RRGGBB und gelten nur für custom_dust.
-                """;
-        Files.writeString(
-                path,
-                header + appendix,
-                StandardCharsets.UTF_8,
-                StandardOpenOption.APPEND
-        );
-        LOGGER.info("Added missing particle style settings to {}", path);
+        // The exact old 0.2.3 defaults are migrated to the new 0.2.4 defaults.
+        if (configVersion == 0
+                && normalizedStyle(entries.get("edgeParticleStyle")).equals("orange_dust")
+                && normalizedStyle(entries.get("gridParticleStyle")).equals("red_dust")) {
+            migratedValues = withParticleStyles(
+                    migratedValues,
+                    ParticleStyle.FLAME,
+                    ParticleStyle.ORANGE_DUST
+            );
+        }
+
+        Files.writeString(path, renderConfig(migratedValues), StandardCharsets.UTF_8);
+        LOGGER.info("Migrated CGN SelectionView config to version {} at {}", CONFIG_VERSION, path);
         return true;
     }
 
-    private static void appendMissingSetting(
-            List<String> lines,
-            StringBuilder appendix,
-            String key,
-            String defaultLine
-    ) {
-        if (!containsSetting(lines, key)) {
-            appendix.append(defaultLine).append('\n');
-        }
-    }
-
-    private static boolean containsSetting(List<String> lines, String key) {
-        for (String rawLine : lines) {
-            String line = stripComment(rawLine).trim();
-            int separator = line.indexOf('=');
-            if (separator > 0 && line.substring(0, separator).trim().equals(key)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private static Values parse(List<String> lines) {
+        return readValues(parseEntries(lines), false);
+    }
+
+    private static Map<String, String> parseEntries(List<String> lines) {
         Map<String, String> entries = new HashMap<>();
 
         for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
@@ -200,6 +114,10 @@ public final class SelectionViewConfig {
             entries.put(key, value);
         }
 
+        return entries;
+    }
+
+    private static Values readValues(Map<String, String> entries, boolean allowLegacyStyles) {
         Values defaults = Values.defaults();
 
         boolean defaultEnabled = readBoolean(entries, "defaultEnabled", defaults.defaultEnabled());
@@ -210,10 +128,18 @@ public final class SelectionViewConfig {
         int maxGridParticles = readInt(entries, "maxGridParticles", defaults.maxGridParticles(), 0, 20000);
         double minimumEdgeSpacing = readDouble(entries, "minimumEdgeSpacing", defaults.minimumEdgeSpacing(), 0.1D, 128.0D);
 
-        ParticleStyle edgeParticleStyle = readParticleStyle(entries, "edgeParticleStyle", defaults.edgeParticleStyle());
-        ParticleStyle gridParticleStyle = readParticleStyle(entries, "gridParticleStyle", defaults.gridParticleStyle());
-        int edgeDustColor = readColor(entries, "edgeDustColor", defaults.edgeDustColor());
-        int gridDustColor = readColor(entries, "gridDustColor", defaults.gridDustColor());
+        ParticleStyle edgeParticleStyle = readParticleStyle(
+                entries,
+                "edgeParticleStyle",
+                defaults.edgeParticleStyle(),
+                allowLegacyStyles
+        );
+        ParticleStyle gridParticleStyle = readParticleStyle(
+                entries,
+                "gridParticleStyle",
+                defaults.gridParticleStyle(),
+                allowLegacyStyles
+        );
         float edgeDustScale = (float) readDouble(entries, "edgeDustScale", defaults.edgeDustScale(), 0.1D, 4.0D);
         float gridDustScale = (float) readDouble(entries, "gridDustScale", defaults.gridDustScale(), 0.1D, 4.0D);
 
@@ -242,8 +168,6 @@ public final class SelectionViewConfig {
                 minimumEdgeSpacing,
                 edgeParticleStyle,
                 gridParticleStyle,
-                edgeDustColor,
-                gridDustColor,
                 edgeDustScale,
                 gridDustScale,
                 smallSelectionThreshold,
@@ -255,6 +179,130 @@ public final class SelectionViewConfig {
                 gridBottom,
                 gridSides
         );
+    }
+
+    private static Values withParticleStyles(
+            Values source,
+            ParticleStyle edgeParticleStyle,
+            ParticleStyle gridParticleStyle
+    ) {
+        return new Values(
+                source.defaultEnabled(),
+                source.allowPlayerToggle(),
+                source.renderIntervalTicks(),
+                source.renderDistance(),
+                source.maxEdgeParticles(),
+                source.maxGridParticles(),
+                source.minimumEdgeSpacing(),
+                edgeParticleStyle,
+                gridParticleStyle,
+                source.edgeDustScale(),
+                source.gridDustScale(),
+                source.smallSelectionThreshold(),
+                source.smallGridSpacing(),
+                source.mediumSelectionThreshold(),
+                source.mediumGridSpacing(),
+                source.largeGridSpacing(),
+                source.gridTop(),
+                source.gridBottom(),
+                source.gridSides()
+        );
+    }
+
+    private static String renderConfig(Values config) {
+        return """
+                # CGN SelectionView for WorldEdit
+                # Server configuration / Server-Konfiguration
+
+                # Internal config format. Do not change manually.
+                # Internes Config-Format. Nicht manuell ändern.
+                configVersion = %d
+
+                # Enable the visualization by default for every player session.
+                # Aktiviert die Anzeige standardmäßig für jede Spielersitzung.
+                defaultEnabled = %s
+
+                # Allow the existing on/off/toggle commands.
+                # Erlaubt die vorhandenen Befehle on/off/toggle.
+                allowPlayerToggle = %s
+
+                # Render interval in server ticks. 20 ticks = 1 second.
+                # Aktualisierungsintervall in Server-Ticks. 20 Ticks = 1 Sekunde.
+                renderIntervalTicks = %d
+
+                # Maximum distance between the player and a rendered particle.
+                # Maximale Entfernung zwischen Spieler und angezeigtem Partikel.
+                renderDistance = %s
+
+                # Particle limits per render pass.
+                # Partikellimits pro Renderdurchlauf.
+                maxEdgeParticles = %d
+                maxGridParticles = %d
+
+                # Minimum spacing between particles on the outer edges.
+                # Mindestabstand der Partikel auf den Außenkanten.
+                minimumEdgeSpacing = %s
+
+                # PARTICLE STYLES / PARTIKELSTILE
+                # Exactly these four values are supported for BOTH settings:
+                # Für BEIDE Einstellungen werden genau diese vier Werte unterstützt:
+                # flame, orange_dust, red_dust, end_rod
+                #
+                # Default: flame outer edges and orange dust helper grid.
+                # Standard: Flammen-Außenkanten und orangefarbenes Dust-Hilfsraster.
+                edgeParticleStyle = "%s"
+                gridParticleStyle = "%s"
+
+                # Size for orange_dust and red_dust. Ignored by flame and end_rod.
+                # Größe für orange_dust und red_dust. Bei flame und end_rod ohne Wirkung.
+                edgeDustScale = %s
+                gridDustScale = %s
+
+                # Adaptive grid spacing. Selection size is the longest cuboid edge.
+                # Adaptiver Rasterabstand. Als Auswahlgröße gilt die längste Quaderkante.
+                smallSelectionThreshold = %s
+                smallGridSpacing = %s
+
+                mediumSelectionThreshold = %s
+                mediumGridSpacing = %s
+
+                largeGridSpacing = %s
+
+                # Select which surfaces receive the helper grid.
+                # Legt fest, welche Flächen das Hilfsraster erhalten.
+                gridTop = %s
+                gridBottom = %s
+                gridSides = %s
+                """.formatted(
+                CONFIG_VERSION,
+                config.defaultEnabled(),
+                config.allowPlayerToggle(),
+                config.renderIntervalTicks(),
+                formatDouble(config.renderDistance()),
+                config.maxEdgeParticles(),
+                config.maxGridParticles(),
+                formatDouble(config.minimumEdgeSpacing()),
+                config.edgeParticleStyle().configName(),
+                config.gridParticleStyle().configName(),
+                formatFloat(config.edgeDustScale()),
+                formatFloat(config.gridDustScale()),
+                formatDouble(config.smallSelectionThreshold()),
+                formatDouble(config.smallGridSpacing()),
+                formatDouble(config.mediumSelectionThreshold()),
+                formatDouble(config.mediumGridSpacing()),
+                formatDouble(config.largeGridSpacing()),
+                config.gridTop(),
+                config.gridBottom(),
+                config.gridSides()
+        );
+    }
+
+    private static String formatDouble(double value) {
+        return Double.toString(value);
+    }
+
+    private static String formatFloat(float value) {
+        return Float.toString(value);
     }
 
     private static String stripComment(String line) {
@@ -339,34 +387,35 @@ public final class SelectionViewConfig {
     private static ParticleStyle readParticleStyle(
             Map<String, String> entries,
             String key,
-            ParticleStyle defaultValue
+            ParticleStyle defaultValue,
+            boolean allowLegacyStyles
     ) {
         String value = readString(entries, key, defaultValue.configName());
-        return ParticleStyle.parse(value, key);
+        return ParticleStyle.parse(value, key, allowLegacyStyles);
     }
 
-    private static int readColor(Map<String, String> entries, String key, int defaultValue) {
-        String fallback = String.format(Locale.ROOT, "#%06X", defaultValue & 0xFFFFFF);
-        String value = readString(entries, key, fallback).trim();
+    private static boolean isLegacyParticleStyle(String rawValue) {
+        String normalized = normalizedStyle(rawValue);
+        return normalized.equals("custom_dust") || normalized.equals("dust");
+    }
 
-        if (value.startsWith("#")) {
-            value = value.substring(1);
-        } else if (value.startsWith("0x") || value.startsWith("0X")) {
-            value = value.substring(2);
+    private static String normalizedStyle(String rawValue) {
+        if (rawValue == null) {
+            return "";
         }
 
-        if (!value.matches("[0-9a-fA-F]{6}")) {
-            throw new IllegalArgumentException(key + " muss #RRGGBB sein / must use #RRGGBB");
+        String value = rawValue.trim();
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            value = value.substring(1, value.length() - 1);
         }
 
-        return Integer.parseInt(value, 16);
+        return value.trim().toLowerCase(Locale.ROOT).replace('-', '_');
     }
 
     public enum ParticleStyle {
+        FLAME("flame"),
         ORANGE_DUST("orange_dust"),
         RED_DUST("red_dust"),
-        CUSTOM_DUST("custom_dust"),
-        FLAME("flame"),
         END_ROD("end_rod");
 
         private final String configName;
@@ -379,10 +428,10 @@ public final class SelectionViewConfig {
             return configName;
         }
 
-        public static ParticleStyle parse(String value, String key) {
+        public static ParticleStyle parse(String value, String key, boolean allowLegacyStyles) {
             String normalized = value.trim().toLowerCase(Locale.ROOT).replace('-', '_');
-            if (normalized.equals("dust")) {
-                return CUSTOM_DUST;
+            if (allowLegacyStyles && (normalized.equals("custom_dust") || normalized.equals("dust"))) {
+                return ORANGE_DUST;
             }
 
             for (ParticleStyle style : values()) {
@@ -392,7 +441,7 @@ public final class SelectionViewConfig {
             }
 
             throw new IllegalArgumentException(
-                    key + " ungültig / invalid. Erlaubt / allowed: orange_dust, red_dust, custom_dust, flame, end_rod"
+                    key + " ungültig / invalid. Erlaubt / allowed: flame, orange_dust, red_dust, end_rod"
             );
         }
     }
@@ -410,8 +459,6 @@ public final class SelectionViewConfig {
             double minimumEdgeSpacing,
             ParticleStyle edgeParticleStyle,
             ParticleStyle gridParticleStyle,
-            int edgeDustColor,
-            int gridDustColor,
             float edgeDustScale,
             float gridDustScale,
             double smallSelectionThreshold,
@@ -432,10 +479,8 @@ public final class SelectionViewConfig {
                     280,
                     300,
                     0.65D,
+                    ParticleStyle.FLAME,
                     ParticleStyle.ORANGE_DUST,
-                    ParticleStyle.RED_DUST,
-                    0xFF6600,
-                    0xFF0000,
                     1.25F,
                     0.8F,
                     20.0D,
