@@ -6,9 +6,9 @@ Serverseitige Visualisierung von WorldEdit-Auswahlen für NeoForge.
 
 ## Status
 
-The project is in early development. The first milestone provides the NeoForge project structure and the `/wesv` command. Selection rendering will follow in the next step.
+The project is in early development. The first milestone provides the NeoForge project structure and the `/cgnsv` command. Selection rendering will follow in the next step.
 
-Das Projekt befindet sich in einer frühen Entwicklungsphase. Der erste Meilenstein stellt die NeoForge-Projektstruktur und den Befehl `/wesv` bereit. Die eigentliche Auswahl-Anzeige folgt im nächsten Schritt.
+Das Projekt befindet sich in einer frühen Entwicklungsphase. Der erste Meilenstein stellt die NeoForge-Projektstruktur und den Befehl `/cgnsv` bereit. Die eigentliche Auswahl-Anzeige folgt im nächsten Schritt.
 
 ## Target / Ziel
 
@@ -21,8 +21,8 @@ Das Projekt befindet sich in einer frühen Entwicklungsphase. Der erste Meilenst
 
 ## Commands / Befehle
 
-- `/wesv`
-- `/wesv info`
+- `/cgnsv`
+- `/cgnsv info`
 
 ## Planned / Geplant
 
