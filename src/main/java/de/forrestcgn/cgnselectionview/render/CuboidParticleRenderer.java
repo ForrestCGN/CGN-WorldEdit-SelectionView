@@ -73,7 +73,7 @@ public final class CuboidParticleRenderer {
                     continue;
                 }
 
-                player.serverLevel().sendParticles(
+                player.level().sendParticles(
                         player,
                         ParticleTypes.END_ROD,
                         true,
